@@ -14,8 +14,10 @@ import ShortsLockupView from '../classes/ShortsLockupView.js';
 import VideoOwner from '../classes/VideoOwner.js';
 import Alert from '../classes/Alert.js';
 import ContinuationItem from '../classes/ContinuationItem.js';
+import ContinuationItemView from '../classes/ContinuationItemView.js';
 import PlaylistVideo from '../classes/PlaylistVideo.js';
 import SectionList from '../classes/SectionList.js';
+import LockupView from '../classes/LockupView.js';
 import { observe, type ObservedArray, type YTNode } from '../helpers.js';
 
 import type { Actions, ApiResponse } from '../../core/index.js';
@@ -66,11 +68,15 @@ export default class Playlist extends Feed<IBrowseResponse> {
     this.messages = this.memo.getType(Message);
   }
 
-  get items(): ObservedArray<PlaylistVideo | ReelItem | ShortsLockupView> {
-    return observe(this.videos.as(PlaylistVideo, ReelItem, ShortsLockupView).filter((video) => (video as PlaylistVideo).style !== 'PLAYLIST_VIDEO_RENDERER_STYLE_RECOMMENDED_VIDEO'));
+  get items(): ObservedArray<PlaylistVideo | ReelItem | ShortsLockupView | LockupView> {
+    return observe(this.videos.as(PlaylistVideo, ReelItem, ShortsLockupView, LockupView).filter((video) => (video as PlaylistVideo).style !== 'PLAYLIST_VIDEO_RENDERER_STYLE_RECOMMENDED_VIDEO'));
   }
 
   get has_continuation() {
+    const continuation_item_view_list = this.memo.getType(ContinuationItemView)[0];
+    if (continuation_item_view_list)
+      return true;
+
     const section_list = this.memo.getType(SectionList)[0];
 
     if (!section_list)
@@ -80,6 +86,10 @@ export default class Playlist extends Feed<IBrowseResponse> {
   }
 
   async getContinuationData(): Promise<IBrowseResponse | undefined> {
+    const continuation_item_view_list = this.memo.getType(ContinuationItemView)[0];
+    if (continuation_item_view_list)
+      return await continuation_item_view_list.endpoint.call<IBrowseResponse>(this.actions, { parse: true });
+
     const section_list = this.memo.getType(SectionList)[0];
 
     /**
