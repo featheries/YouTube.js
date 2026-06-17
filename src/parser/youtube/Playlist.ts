@@ -73,23 +73,15 @@ export default class Playlist extends Feed<IBrowseResponse> {
   }
 
   get has_continuation() {
-    const continuation_item_view_list = this.memo.getType(ContinuationItemView)[0];
-    if (continuation_item_view_list)
-      return true;
-
     const section_list = this.memo.getType(SectionList)[0];
 
     if (!section_list)
       return super.has_continuation;
 
-    return !!this.memo.getType(ContinuationItem).find((node) => !section_list.contents.includes(node));
+    return !!this.memo.getType(ContinuationItem, ContinuationItemView).find((node) => !section_list.contents.includes(node));
   }
 
   async getContinuationData(): Promise<IBrowseResponse | undefined> {
-    const continuation_item_view_list = this.memo.getType(ContinuationItemView)[0];
-    if (continuation_item_view_list)
-      return await continuation_item_view_list.endpoint.call<IBrowseResponse>(this.actions, { parse: true });
-
     const section_list = this.memo.getType(SectionList)[0];
 
     /**
@@ -99,7 +91,7 @@ export default class Playlist extends Feed<IBrowseResponse> {
     if (!section_list)
       return await super.getContinuationData();
 
-    const playlist_contents_continuation = this.memo.getType(ContinuationItem)
+    const playlist_contents_continuation = this.memo.getType(ContinuationItem, ContinuationItemView)
       .find((node) => !section_list.contents.includes(node));
 
     if (!playlist_contents_continuation)
